@@ -26,8 +26,6 @@ use EasySwoole\Http\Response;
 use EasySwoole\Trace\AbstractInterface\LoggerInterface;
 use EasySwoole\Trace\AbstractInterface\TriggerInterface;
 use EasySwoole\Trace\Bean\Location;
-use EasySwoole\EasySwoole\Swoole\PipeMessage\Message;
-use EasySwoole\EasySwoole\Swoole\PipeMessage\OnCommand;
 use EasySwoole\EasySwoole\Swoole\Task\AbstractAsyncTask;
 use EasySwoole\EasySwoole\Swoole\Task\SuperClosure;
 use Swoole\Server\Task;
@@ -72,8 +70,6 @@ class Core
     function setIsDev(bool $isDev)
     {
         $this->isDev = $isDev;
-        //变更这里的时候，例如在全局的事件里面修改的，，重新加载配置项
-        $this->loadEnv();
         return $this;
     }
 
@@ -154,6 +150,8 @@ class Core
         if(empty($tempDir)){
             $tempDir = EASYSWOOLE_ROOT.'/Temp';
             Config::getInstance()->setConf('TEMP_DIR',$tempDir);
+        }else{
+            $tempDir = rtrim($tempDir,'/');
         }
         if(!is_dir($tempDir)){
             mkdir($tempDir);
@@ -164,6 +162,8 @@ class Core
         if(empty($logDir)){
             $logDir = EASYSWOOLE_ROOT.'/Log';
             Config::getInstance()->setConf('LOG_DIR',$logDir);
+        }else{
+            $logDir = rtrim($logDir,'/');
         }
         if(!is_dir($logDir)){
             mkdir($logDir);
@@ -359,31 +359,9 @@ class Core
                 return null;
             });
         }
+
         EventHelper::on($server,EventRegister::onFinish,function (){
             //空逻辑
-        });
-
-        //通过pipe通讯，也就是processAsync投递的闭包任务，是没有taskId信息的，因此参数传递默认-1
-        OnCommand::getInstance()->set('TASK',function (\swoole_server $server,$taskObj,$fromWorkerId){
-            //闭包任务无法再次二次序列化,因此直接执行
-            if($taskObj instanceof SuperClosure){
-                try{
-                    call_user_func($taskObj,$server,-1,$fromWorkerId);
-                }catch (\Throwable $throwable){
-                    Trigger::getInstance()->throwable($throwable);
-                }
-            }else{
-                $server->task($taskObj);
-            }
-        });
-
-        EventHelper::on($server,EventRegister::onPipeMessage,function (\swoole_server $server,$fromWorkerId,$data){
-            $message = unserialize($data);
-            if($message instanceof Message){
-                OnCommand::getInstance()->hook($message->getCommand(),$server,$message->getData(),$fromWorkerId);
-            }else{
-                Trigger::getInstance()->error("data :{$data} not packet as an Message Instance");
-            }
         });
 
         //注册默认的worker start
@@ -400,7 +378,7 @@ class Core
         });
     }
 
-    private function loadEnv()
+    public function loadEnv()
     {
         //加载之前，先清空原来的
         if($this->isDev){

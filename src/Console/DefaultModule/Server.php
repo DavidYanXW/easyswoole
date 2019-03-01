@@ -6,10 +6,10 @@
  * Time: 上午11:03
  */
 
-namespace EasySwoole\EasySwoole\Console\DefaultCommand;
+namespace EasySwoole\EasySwoole\Console\DefaultModule;
 
 use EasySwoole\EasySwoole\Config;
-use EasySwoole\EasySwoole\Console\CommandInterface;
+use EasySwoole\EasySwoole\Console\ModuleInterface;
 use EasySwoole\EasySwoole\Console\ConsoleService;
 use EasySwoole\EasySwoole\ServerManager;
 use EasySwoole\Socket\Bean\Caller;
@@ -21,7 +21,7 @@ use EasySwoole\Utility\ArrayToTextTable;
  * Class Server
  * @package EasySwoole\EasySwoole\Console\DefaultCommand
  */
-class Server implements CommandInterface
+class Server implements ModuleInterface
 {
     function moduleName(): string
     {
@@ -61,20 +61,18 @@ class Server implements CommandInterface
     public function help(Caller $caller, Response $response)
     {
         $help = <<<HELP
-        
 进行服务端的管理
 
 用法: 命令 [命令参数]
 
-status                    | 查看服务当前的状态
-hostIp                    | 显示服务当前的IP地址
-reload                    | 重载服务端
-shutdown                  | 关闭服务端
-close                     | 断开远程连接
-clientInfo [fd]           | 查看某个链接的信息
-serverList                | 查看服务端启动的服务列表
-pushLog [enable|disable]  | 打开或关闭远程日志推送
-
+server status                    | 查看服务当前的状态
+server hostIp                    | 显示服务当前的IP地址
+server reload                    | 重载服务端
+server shutdown                  | 关闭服务端
+server close                     | 断开远程连接
+server clientInfo [fd]           | 查看某个链接的信息
+server serverList                | 查看服务端启动的服务列表
+server pushLog [enable|disable]  | 打开或关闭远程日志推送
 HELP;
         $response->setMessage($help);
     }
